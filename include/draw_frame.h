@@ -145,8 +145,8 @@ protected:
     /// Key to control whether first run dialog is shown on startup
     long    m_firstRunDialogSetting;
 
-    wxChoice*       m_gridSelectBox;
-    wxChoice*       m_zoomSelectBox;
+    wxComboBox*       m_gridSelectBox;
+    wxComboBox*       m_zoomSelectBox;
 
     /// Auxiliary tool bar typically shown below the main tool bar at the top of the
     /// main window.

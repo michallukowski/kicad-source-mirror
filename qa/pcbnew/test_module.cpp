@@ -1,7 +1,7 @@
 /*
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
- * Copyright (C) 2017 KiCad Developers, see change_log.txt for contributors.
+ * Copyright (C) 2018 KiCad Developers, see CHANGELOG.TXT for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -21,24 +21,28 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
-#ifndef UNIT_FORMAT_H
-#define UNIT_FORMAT_H
+/**
+ * Main file for the pcbnew tests to be compiled
+ */
+#include <boost/test/unit_test.hpp>
 
-// Conversion to application internal units defined at build time.
-#if defined( PCBNEW )
-    #include <class_board_item.h>
-    #define FMT_IU     BOARD_ITEM::FormatInternalUnits
-    #define FMT_ANGLE  BOARD_ITEM::FormatAngle
-#elif defined( EESCHEMA )
-    #include <sch_item_struct.h>
-    #define FMT_IU          SCH_ITEM::FormatInternalUnits
-    #define FMT_ANGLE       SCH_ITEM::FormatAngle
-#elif defined( GERBVIEW )
-#elif defined( PL_EDITOR )
-    #include <base_units.h>
-    #define FMT_IU Double2Str
-#else
-#error "Cannot resolve units formatting due to no definition of EESCHEMA or PCBNEW."
-#endif
+#include <wx/init.h>
 
-#endif /* UNIT_FORMAT_H */
+
+bool init_unit_test()
+{
+    boost::unit_test::framework::master_test_suite().p_name.value = "Common Pcbnew module tests";
+    return wxInitialize();
+}
+
+
+int main( int argc, char* argv[] )
+{
+    int ret = boost::unit_test::unit_test_main( &init_unit_test, argc, argv );
+
+    // This causes some glib warnings on GTK3 (http://trac.wxwidgets.org/ticket/18274)
+    // but without it, Valgrind notices a lot of leaks from WX
+    wxUninitialize();
+
+    return ret;
+}

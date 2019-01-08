@@ -320,7 +320,7 @@ void EAGLE_PLUGIN::clear_cu_map()
 {
     // All cu layers are invalid until we see them in the <layers> section while
     // loading either a board or library.  See loadLayerDefs().
-    for( unsigned i = 0;  i < DIM(m_cu_map);  ++i )
+    for( unsigned i = 0;  i < arrayDim(m_cu_map);  ++i )
         m_cu_map[i] = -1;
 }
 
@@ -435,7 +435,7 @@ void EAGLE_PLUGIN::loadLayerDefs( wxXmlNode* aLayers )
 
 #if 0 && defined(DEBUG)
     printf( "m_cu_map:\n" );
-    for( unsigned i=0; i<DIM(m_cu_map);  ++i )
+    for( unsigned i=0; i<arrayDim(m_cu_map);  ++i )
     {
         printf( "\t[%d]:%d\n", i, m_cu_map[i] );
     }
@@ -1173,7 +1173,7 @@ ZONE_CONTAINER* EAGLE_PLUGIN::loadPolygon( wxXmlNode* aPolyNode )
         zone->SetHatch( ZONE_CONTAINER::DIAGONAL_EDGE, zone->GetDefaultHatchPitch(), true );
 
     // clearances, etc.
-    zone->SetArcSegmentCount( 32 );     // @todo: should be a constructor default?
+    zone->SetArcSegmentCount( ARC_APPROX_SEGMENTS_COUNT_HIGH_DEF );     // @todo: should be a constructor default?
     zone->SetMinThickness( std::max<int>(
             ZONE_THICKNESS_MIN_VALUE_MIL*IU_PER_MILS, p.width.ToPcbUnits() ) );
 
@@ -1392,6 +1392,26 @@ void EAGLE_PLUGIN::packageWire( MODULE* aModule, wxXmlNode* aTree ) const
     wxPoint      start( kicad_x( w.x1 ), kicad_y( w.y1 ) );
     wxPoint      end(   kicad_x( w.x2 ), kicad_y( w.y2 ) );
     int          width = w.width.ToPcbUnits();
+
+    if( width <= 0 )
+    {
+        switch( layer )
+        {
+        case Edge_Cuts:
+            width = DEFAULT_EDGE_WIDTH;
+            break;
+        case F_SilkS:
+        case B_SilkS:
+            width = DEFAULT_SILK_LINE_WIDTH;
+            break;
+        case F_CrtYd:
+        case B_CrtYd:
+            width = DEFAULT_COURTYARD_WIDTH;
+            break;
+        default:
+            width = DEFAULT_LINE_WIDTH;
+        }
+    }
 
     // FIXME: the cap attribute is ignored because kicad can't create lines
     //        with flat ends.
@@ -1718,20 +1738,38 @@ void EAGLE_PLUGIN::packageCircle( MODULE* aModule, wxXmlNode* aTree ) const
     ECIRCLE         e( aTree );
     PCB_LAYER_ID    layer = kicad_layer( e.layer );
     EDGE_MODULE*    gr = new EDGE_MODULE( aModule, S_CIRCLE );
+    int             width = e.width.ToPcbUnits();
+
+    if( width <= 0 )
+    {
+        switch( layer )
+        {
+        case Edge_Cuts:
+            width = DEFAULT_EDGE_WIDTH;
+            break;
+        case F_SilkS:
+        case B_SilkS:
+            width = DEFAULT_SILK_LINE_WIDTH;
+            break;
+        case F_CrtYd:
+        case B_CrtYd:
+            width = DEFAULT_COURTYARD_WIDTH;
+            break;
+        default:
+            width = DEFAULT_LINE_WIDTH;
+        }
+    }
 
     aModule->GraphicalItemsList().PushBack( gr );
+    gr->SetWidth( width );
 
-    gr->SetWidth( e.width.ToPcbUnits() );
-
-    switch( (int) layer )
+    switch ( (int) layer )
     {
-    case UNDEFINED_LAYER:   layer = Cmts_User;          break;
-    /*
-    case Eco1_User:            layer = F_SilkS; break;
-    case Eco2_User:            layer = B_SilkS;  break;
-    */
+    case UNDEFINED_LAYER:
+        layer = Cmts_User;
+        break;
     default:
-                            break;
+        break;
     }
 
     gr->SetLayer( layer );
@@ -2127,7 +2165,7 @@ PCB_LAYER_ID EAGLE_PLUGIN::kicad_layer( int aEagleLayer ) const
     int kiLayer;
 
     // eagle copper layer:
-    if( aEagleLayer >= 1 && aEagleLayer < int( DIM( m_cu_map ) ) )
+    if( aEagleLayer >= 1 && aEagleLayer < int( arrayDim( m_cu_map ) ) )
     {
         kiLayer = m_cu_map[aEagleLayer];
     }

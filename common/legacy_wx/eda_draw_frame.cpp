@@ -207,7 +207,7 @@ EDA_DRAW_FRAME::EDA_DRAW_FRAME( KIWAY* aKiway, wxWindow* aParent,
         GetTextSize( wxT( "Add layer alignment target" ), stsbar ).x + 10,
     };
 
-    SetStatusWidths( DIM( dims ), dims );
+    SetStatusWidths( arrayDim( dims ), dims );
 
     // Create child subwindows.
     GetClientSize( &m_FrameSize.x, &m_FrameSize.y );
@@ -304,6 +304,10 @@ void EDA_DRAW_FRAME::CommonSettingsChanged()
     int tmp;
     settings->Read( GAL_ANTIALIASING_MODE_KEY, &tmp, (int) KIGFX::OPENGL_ANTIALIASING_MODE::NONE );
     m_galDisplayOptions.gl_antialiasing_mode = (KIGFX::OPENGL_ANTIALIASING_MODE) tmp;
+
+    settings->Read( CAIRO_ANTIALIASING_MODE_KEY, &tmp, (int) KIGFX::CAIRO_ANTIALIASING_MODE::NONE );
+    m_galDisplayOptions.cairo_antialiasing_mode = (KIGFX::CAIRO_ANTIALIASING_MODE) tmp;
+
     m_galDisplayOptions.NotifyChanged();
 }
 
@@ -519,7 +523,7 @@ void EDA_DRAW_FRAME::OnSelectGrid( wxCommandEvent& event )
     int* clientData;
     int  eventId = ID_POPUP_GRID_LEVEL_100;
 
-    if( event.GetEventType() == wxEVT_CHOICE )
+    if( event.GetEventType() == wxEVT_COMBOBOX )
     {
         if( m_gridSelectBox == NULL )   // Should not happen
             return;
@@ -868,6 +872,10 @@ void EDA_DRAW_FRAME::LoadSettings( wxConfigBase* aCfg )
     int temp;
     cmnCfg->Read( GAL_ANTIALIASING_MODE_KEY, &temp, (int) KIGFX::OPENGL_ANTIALIASING_MODE::NONE );
     m_galDisplayOptions.gl_antialiasing_mode = (KIGFX::OPENGL_ANTIALIASING_MODE) temp;
+
+    cmnCfg->Read( CAIRO_ANTIALIASING_MODE_KEY, &temp, (int) KIGFX::CAIRO_ANTIALIASING_MODE::NONE );
+    m_galDisplayOptions.cairo_antialiasing_mode = (KIGFX::CAIRO_ANTIALIASING_MODE) temp;
+
     m_galDisplayOptions.NotifyChanged();
 }
 
@@ -1331,10 +1339,11 @@ EDA_DRAW_PANEL_GAL::GAL_TYPE EDA_DRAW_FRAME::LoadCanvasTypeSetting()
     }
 
     // Coerce the value into a GAL type when Legacy is not available
+    // Default to Cairo, and on the first, user will be prompted for OpenGL
     if( canvasType == EDA_DRAW_PANEL_GAL::GAL_TYPE_NONE
             && !ADVANCED_CFG::GetCfg().AllowLegacyCanvas() )
     {
-        canvasType = EDA_DRAW_PANEL_GAL::GAL_TYPE_OPENGL;
+        canvasType = EDA_DRAW_PANEL_GAL::GAL_TYPE_CAIRO;
     }
 
     return canvasType;

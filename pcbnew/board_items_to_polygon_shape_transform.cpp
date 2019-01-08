@@ -80,7 +80,7 @@ static void addTextSegmToPoly( int x0, int y0, int xf, int yf, void* aData )
 void BOARD::ConvertBrdLayerToPolygonalContours( PCB_LAYER_ID aLayer, SHAPE_POLY_SET& aOutlines )
 {
     // Number of segments to convert a circle to a polygon
-    const int       segcountforcircle   = 18;
+    const int       segcountforcircle   = ARC_APPROX_SEGMENTS_COUNT_HIGH_DEF;
     double          correctionFactor    = GetCircletoPolyCorrectionFactor( segcountforcircle );
 
     // convert tracks and vias:
@@ -1303,7 +1303,7 @@ void    CreateThermalReliefPadPolygon( SHAPE_POLY_SET& aCornerBuffer,
 
         stub.NewOutline();
 
-        for( unsigned ii = 0; ii < DIM( stubBuffer ); ii++ )
+        for( unsigned ii = 0; ii < arrayDim( stubBuffer ); ii++ )
         {
             wxPoint cpos = stubBuffer[ii];
             RotatePoint( &cpos, aPad.GetOrientation() );
@@ -1325,7 +1325,7 @@ void    CreateThermalReliefPadPolygon( SHAPE_POLY_SET& aCornerBuffer,
         stub.RemoveAllContours();
         stub.NewOutline();
 
-        for( unsigned ii = 0; ii < DIM( stubBuffer ); ii++ )
+        for( unsigned ii = 0; ii < arrayDim( stubBuffer ); ii++ )
         {
             wxPoint cpos = stubBuffer[ii];
             RotatePoint( &cpos, aPad.GetOrientation() );

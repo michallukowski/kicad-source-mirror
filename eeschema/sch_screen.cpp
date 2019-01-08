@@ -99,10 +99,10 @@ SCH_SCREEN::SCH_SCREEN( KIWAY* aKiway ) :
 
     SetZoom( 32 );
 
-    for( unsigned i = 0; i < DIM( SchematicZoomList ); i++ )
+    for( unsigned i = 0; i < arrayDim( SchematicZoomList ); i++ )
         m_ZoomList.push_back( SchematicZoomList[i] );
 
-    for( unsigned i = 0; i < DIM( SchematicGridList ); i++ )
+    for( unsigned i = 0; i < arrayDim( SchematicGridList ); i++ )
         AddGrid( SchematicGridList[i] );
 
     SetGrid( wxRealPoint( 50, 50 ) );   // Default grid size.
@@ -1531,6 +1531,9 @@ size_t SCH_SCREENS::GetLibNicknames( wxArrayString& aLibNicknames )
 
             symbol = dynamic_cast< SCH_COMPONENT* >( item );
             wxASSERT( symbol );
+
+            if( !symbol )
+                continue;
 
             nickname = symbol->GetLibId().GetLibNickname();
 

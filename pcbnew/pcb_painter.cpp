@@ -62,7 +62,7 @@ PCB_RENDER_SETTINGS::PCB_RENDER_SETTINGS()
     m_selectionCandidateColor = COLOR4D( 0.0, 1.0, 0.0, 0.75 );
 
     // By default everything should be displayed as filled
-    for( unsigned int i = 0; i < DIM( m_sketchMode ); ++i )
+    for( unsigned int i = 0; i < arrayDim( m_sketchMode ); ++i )
     {
         m_sketchMode[i] = false;
     }
@@ -855,7 +855,7 @@ void PCB_PAINTER::draw( const D_PAD* aPad, int aLayer )
         {
             SHAPE_POLY_SET outline;
             outline.Append( aPad->GetCustomShapeAsPolygon() );
-            const int segmentToCircleCount = 32;
+            const int segmentToCircleCount = ARC_APPROX_SEGMENTS_COUNT_HIGH_DEF;
             outline.Inflate( custom_margin, segmentToCircleCount );
             m_gal->DrawPolygon( outline );
         }

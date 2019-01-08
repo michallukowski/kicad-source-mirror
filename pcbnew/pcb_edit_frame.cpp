@@ -96,8 +96,8 @@ BEGIN_EVENT_TABLE( PCB_EDIT_FRAME, PCB_BASE_FRAME )
     EVT_SOCKET( ID_EDA_SOCKET_EVENT_SERV, PCB_EDIT_FRAME::OnSockRequestServer )
     EVT_SOCKET( ID_EDA_SOCKET_EVENT, PCB_EDIT_FRAME::OnSockRequest )
 
-    EVT_CHOICE( ID_ON_ZOOM_SELECT, PCB_EDIT_FRAME::OnSelectZoom )
-    EVT_CHOICE( ID_ON_GRID_SELECT, PCB_EDIT_FRAME::OnSelectGrid )
+    EVT_COMBOBOX( ID_ON_ZOOM_SELECT, PCB_EDIT_FRAME::OnSelectZoom )
+    EVT_COMBOBOX( ID_ON_GRID_SELECT, PCB_EDIT_FRAME::OnSelectGrid )
 
     EVT_CLOSE( PCB_EDIT_FRAME::OnCloseWindow )
     EVT_SIZE( PCB_EDIT_FRAME::OnSize )
@@ -197,8 +197,8 @@ BEGIN_EVENT_TABLE( PCB_EDIT_FRAME, PCB_BASE_FRAME )
     EVT_TOOL( ID_AUX_TOOLBAR_PCB_SELECT_LAYER_PAIR, PCB_EDIT_FRAME::Process_Special_Functions )
     EVT_TOOL( ID_AUX_TOOLBAR_PCB_SELECT_AUTO_WIDTH, PCB_EDIT_FRAME::Tracks_and_Vias_Size_Event )
     EVT_COMBOBOX( ID_TOOLBARH_PCB_SELECT_LAYER, PCB_EDIT_FRAME::Process_Special_Functions )
-    EVT_CHOICE( ID_AUX_TOOLBAR_PCB_TRACK_WIDTH, PCB_EDIT_FRAME::Tracks_and_Vias_Size_Event )
-    EVT_CHOICE( ID_AUX_TOOLBAR_PCB_VIA_SIZE, PCB_EDIT_FRAME::Tracks_and_Vias_Size_Event )
+    EVT_COMBOBOX( ID_AUX_TOOLBAR_PCB_TRACK_WIDTH, PCB_EDIT_FRAME::Tracks_and_Vias_Size_Event )
+    EVT_COMBOBOX( ID_AUX_TOOLBAR_PCB_VIA_SIZE, PCB_EDIT_FRAME::Tracks_and_Vias_Size_Event )
 
 
 #if defined(KICAD_SCRIPTING) && defined(KICAD_SCRIPTING_ACTION_MENU)
@@ -317,7 +317,7 @@ PCB_EDIT_FRAME::PCB_EDIT_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
     EDA_DRAW_PANEL_GAL* galCanvas = new PCB_DRAW_PANEL_GAL( this, -1, wxPoint( 0, 0 ),
                                                 m_FrameSize,
                                                 GetGalDisplayOptions(),
-                                                EDA_DRAW_PANEL_GAL::GAL_TYPE_NONE );
+                                                EDA_DRAW_PANEL_GAL::GAL_TYPE_CAIRO );
 
     SetGalCanvas( galCanvas );
 
@@ -425,9 +425,10 @@ PCB_EDIT_FRAME::PCB_EDIT_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
                     GetEventHandler()->ProcessEvent( cairoEvt );
                 }
             }
-            else if( canvasType == EDA_DRAW_PANEL_GAL::GAL_TYPE_NONE )
+            else
             {
-                // If they were on legacy, switch them to Cairo
+                // If they were on legacy, or they've been coerced into GAL
+                // due to unavailable legacy (GTK3), switch to Cairo
                 wxCommandEvent evt( wxEVT_MENU, ID_MENU_CANVAS_CAIRO );
                 GetEventHandler()->ProcessEvent( evt );
             }
@@ -706,7 +707,7 @@ void PCB_EDIT_FRAME::enableGALSpecificMenus()
 
         bool enbl = IsGalCanvasActive();
 
-        for( unsigned ii = 0; ii < DIM( id_list ); ii++ )
+        for( unsigned ii = 0; ii < arrayDim( id_list ); ii++ )
         {
             if( GetMenuBar()->FindItem( id_list[ii] ) )
                 GetMenuBar()->FindItem( id_list[ii] )->Enable( enbl );
