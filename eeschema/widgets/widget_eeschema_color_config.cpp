@@ -34,6 +34,12 @@
 #include "widget_eeschema_color_config.h"
 #include <dialogs/dialog_color_picker.h>
 
+#include <wx/filefn.h>
+
+//The names of the color scheme configuration files
+#define COLOR_SCHEME_FILE_NAME      wxT( "eeschema.colors" )
+#define COLOR_SCHEME_TEMP_FILE_NAME wxT( "~eeschema.colors" )
+
 // Width and height of every (color-displaying / bitmap) button in dialog units
 const wxSize BUTT_SIZE( 10, 6 );
 const wxSize BUTT_BORDER( 4, 4 );
@@ -45,6 +51,7 @@ const wxSize BUTT_BORDER( 4, 4 );
 struct COLORBUTTON
 {
     wxString        m_Name;
+    wxString        m_ConfigName;
     int             m_Layer;
 };
 
@@ -55,48 +62,48 @@ struct BUTTONINDEX
 };
 
 static COLORBUTTON generalColorButtons[] = {
-    { _( "Wire" ),              LAYER_WIRE },
-    { _( "Bus" ),               LAYER_BUS },
-    { _( "Junction" ),          LAYER_JUNCTION },
-    { _( "Label" ),             LAYER_LOCLABEL },
-    { _( "Global label" ),      LAYER_GLOBLABEL },
-    { _( "Net name" ),          LAYER_NETNAM },
-    { _( "Notes" ),             LAYER_NOTES },
-    { _( "No connect symbol" ), LAYER_NOCONNECT },
-    { wxT( "" ), -1 }                           // Sentinel marking end of list.
+    { _( "Wire" ),               wxT( "WIRE" ),             LAYER_WIRE },
+    { _( "Bus" ),                wxT( "BUS" ),              LAYER_BUS },
+    { _( "Junction" ),           wxT( "JUNCTION" ),         LAYER_JUNCTION },
+    { _( "Label" ),              wxT( "LOCLABEL" ),         LAYER_LOCLABEL },
+    { _( "Global label" ),       wxT( "GLOBLABEL" ),        LAYER_GLOBLABEL },
+    { _( "Net name" ),           wxT( "NETNAM" ),           LAYER_NETNAM },
+    { _( "Notes" ),              wxT( "NOTES" ),            LAYER_NOTES },
+    { _( "No connect symbol" ),  wxT( "NOCONNECT" ),        LAYER_NOCONNECT },
+    { wxT( "" ), wxT( "" ), -1 }                           // Sentinel marking end of list.
 };
 
 static COLORBUTTON componentColorButtons[] = {
-    { _( "Body outline" ),      LAYER_DEVICE },
-    { _( "Body background" ),   LAYER_DEVICE_BACKGROUND },
-    { _( "Pin" ),               LAYER_PIN },
-    { _( "Pin number" ),        LAYER_PINNUM },
-    { _( "Pin name" ),          LAYER_PINNAM },
-    { _( "Reference" ),         LAYER_REFERENCEPART },
-    { _( "Value" ),             LAYER_VALUEPART },
-    { _( "Fields" ),            LAYER_FIELDS },
-    { wxT( "" ), -1 }                           // Sentinel marking end of list.
+    { _( "Body outline" ),       wxT( "DEVICE" ),           LAYER_DEVICE },
+    { _( "Body background" ),    wxT( "DEVICE_BG" ),        LAYER_DEVICE_BACKGROUND },
+    { _( "Pin" ),                wxT( "PIN" ),              LAYER_PIN },
+    { _( "Pin number" ),         wxT( "PINNUM" ),           LAYER_PINNUM },
+    { _( "Pin name" ),           wxT( "PINNAM" ),           LAYER_PINNAM },
+    { _( "Reference" ),          wxT( "REFERENCEPART" ),    LAYER_REFERENCEPART },
+    { _( "Value" ),              wxT( "VALUEPART" ),        LAYER_VALUEPART },
+    { _( "Fields" ),             wxT( "FIELDS" ),           LAYER_FIELDS },
+    { wxT( "" ), wxT( "" ), -1 }                           // Sentinel marking end of list.
 };
 
 static COLORBUTTON sheetColorButtons[] = {
-    { _( "Sheet" ),             LAYER_SHEET },
-    { _( "Sheet file name" ),   LAYER_SHEETFILENAME },
-    { _( "Sheet name" ),        LAYER_SHEETNAME },
-    { _( "Sheet label" ),       LAYER_SHEETLABEL },
-    { _( "Hierarchical label" ),LAYER_HIERLABEL },
-    { wxT( "" ), -1 }                           // Sentinel marking end of list.
+    { _( "Sheet" ),              wxT( "SHEET" ),            LAYER_SHEET },
+    { _( "Sheet file name" ),    wxT( "SHEETFILENAME" ),    LAYER_SHEETFILENAME },
+    { _( "Sheet name" ),         wxT( "SHEETNAME" ),        LAYER_SHEETNAME },
+    { _( "Sheet label" ),        wxT( "SHEETLABEL" ),       LAYER_SHEETLABEL },
+    { _( "Hierarchical label" ), wxT( "HIERLABEL" ),        LAYER_HIERLABEL },
+    { wxT( "" ), wxT( "" ), -1 }                           // Sentinel marking end of list.
 };
 
 static COLORBUTTON miscColorButtons[] = {
-    { _( "ERC warning" ),       LAYER_ERC_WARN },
-    { _( "ERC error" ),         LAYER_ERC_ERR },
-    { _( "Brightened" ),        LAYER_BRIGHTENED },
-    { _( "Hidden items" ),      LAYER_HIDDEN },
-    { _( "Worksheet" ),         LAYER_WORKSHEET },
-    { _( "Cursor" ),            LAYER_SCHEMATIC_CURSOR },
-    { _( "Grid" ),              LAYER_SCHEMATIC_GRID },
-    { _( "Background" ),        LAYER_SCHEMATIC_BACKGROUND },
-    { wxT( "" ), -1 }                           // Sentinel marking end of list.
+    { _( "ERC warning" ),        wxT( "ERC_WARN" ),         LAYER_ERC_WARN },
+    { _( "ERC error" ),          wxT( "ERC_ERR" ),          LAYER_ERC_ERR },
+    { _( "Brightened" ),         wxT( "BRIGHTENED" ),       LAYER_BRIGHTENED },
+    { _( "Hidden items" ),       wxT( "HIDDEN" ),           LAYER_HIDDEN },
+    { _( "Worksheet" ),          wxT( "WORKSHEET" ),        LAYER_WORKSHEET },
+    { _( "Cursor" ),             wxT( "SCHEMATIC_CURSOR" ), LAYER_SCHEMATIC_CURSOR },
+    { _( "Grid" ),               wxT( "SCHEMATIC_GRID" ),   LAYER_SCHEMATIC_GRID },
+    { _( "Background" ),         wxT( "SCHEMATIC_BG" ),     LAYER_SCHEMATIC_BACKGROUND },
+    { wxT( "" ), wxT( "" ), -1 }                           // Sentinel marking end of list.
 };
 
 
@@ -108,7 +115,7 @@ static BUTTONINDEX buttonGroups[] = {
     { wxT( "" ), NULL }
 };
 
-static COLORBUTTON bgColorButton = { "", LAYER_SCHEMATIC_BACKGROUND };
+static COLORBUTTON bgColorButton = { "", "", LAYER_SCHEMATIC_BACKGROUND };
 
 static COLOR4D currentColors[ LAYER_ID_COUNT ];
 
@@ -119,17 +126,21 @@ WIDGET_EESCHEMA_COLOR_CONFIG::WIDGET_EESCHEMA_COLOR_CONFIG( wxWindow* aParent, E
     m_butt_size_pix = ConvertDialogToPixels( BUTT_SIZE );
     m_butt_border_pix = ConvertDialogToPixels( BUTT_BORDER );
 
-    CreateControls();
+    m_mainBoxSizer = new wxBoxSizer( wxVERTICAL );
+    SetSizer( m_mainBoxSizer );
+
+    m_colorSchemeBoxSizer = CreateColorSchemeList();
+    m_mainBoxSizer->Add( m_colorSchemeBoxSizer, 0, wxEXPAND, 10 );
+    m_controlsBoxSizer = CreateControls();
+    m_mainBoxSizer->Add( m_controlsBoxSizer, 1, wxEXPAND, 5 );
 }
 
 
-void WIDGET_EESCHEMA_COLOR_CONFIG::CreateControls()
+wxBoxSizer* WIDGET_EESCHEMA_COLOR_CONFIG::CreateControls()
 {
     wxStaticText*   label;
     int             buttonId = 1800;
-
-    m_mainBoxSizer = new wxBoxSizer( wxHORIZONTAL );
-    SetSizer( m_mainBoxSizer );
+    wxBoxSizer*     retBoxSizer = new wxBoxSizer( wxHORIZONTAL );
 
     BUTTONINDEX* groups = buttonGroups;
     wxBoxSizer* columnBoxSizer = NULL;
@@ -139,7 +150,7 @@ void WIDGET_EESCHEMA_COLOR_CONFIG::CreateControls()
         COLORBUTTON* buttons = groups->m_Buttons;
 
         columnBoxSizer = new wxBoxSizer( wxVERTICAL );
-        m_mainBoxSizer->Add( columnBoxSizer, 1, wxALIGN_TOP | wxLEFT, 5 );
+        retBoxSizer->Add( columnBoxSizer, 1, wxALIGN_TOP | wxLEFT, 5 );
         wxBoxSizer* rowBoxSizer = new wxBoxSizer( wxHORIZONTAL );
         columnBoxSizer->Add( rowBoxSizer, 0, wxGROW | wxLEFT | wxRIGHT | wxBOTTOM, 5 );
 
@@ -189,9 +200,12 @@ void WIDGET_EESCHEMA_COLOR_CONFIG::CreateControls()
         groups++;
     }
 
-    Connect( 1800, buttonId, wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( WIDGET_EESCHEMA_COLOR_CONFIG::SetColor ) );
+    Connect( 1800, buttonId, wxEVT_COMMAND_BUTTON_CLICKED,
+            wxCommandEventHandler( WIDGET_EESCHEMA_COLOR_CONFIG::SetColor ) );
 
     // Dialog now needs to be resized, but the associated command is found elsewhere.
+
+    return retBoxSizer;
 }
 
 
@@ -234,6 +248,9 @@ void WIDGET_EESCHEMA_COLOR_CONFIG::SetColor( wxCommandEvent& event )
     button->Refresh();
 
     Refresh( false );
+
+    wxString strNewColor = newColor.ToWxString( wxC2S_NAME | wxC2S_CSS_SYNTAX );
+    ChangeColorShemaInTempFile( colorButton->m_ConfigName, strNewColor );
 }
 
 
@@ -264,7 +281,410 @@ bool WIDGET_EESCHEMA_COLOR_CONFIG::TransferDataFromControl()
 
     SetLayerColor( currentColors[ LAYER_WORKSHEET ], (SCH_LAYER_ID) LAYER_WORKSHEET );
 
+    m_colorSchemeConfigFile->Flush();
+    SaveColorSchemeChangesToFile();
+
     return true;
+}
+
+
+wxBoxSizer* WIDGET_EESCHEMA_COLOR_CONFIG::CreateColorSchemeList()
+{
+    wxString        configPath = wxEmptyString;
+    wxArrayString   arrayStringChoices;
+    wxBoxSizer*     retBoxSizer = new wxBoxSizer( wxHORIZONTAL );
+    wxString        currentColorScheme = wxEmptyString;
+    int             selection;
+
+    if ( InitColorSchemeFile() )
+    {
+        GetColorSchemeListFromFile( arrayStringChoices );
+
+        currentColorScheme = GetCurrentColorSchemeFromFile();
+
+        m_labelColorScheme = new wxStaticText(
+                this, wxID_ANY, _( "Color scheme: " ), wxDefaultPosition, wxDefaultSize, 0 );
+        m_labelColorScheme->Wrap( -1 );
+        retBoxSizer->Add( m_labelColorScheme, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5 );
+
+        m_choiceColorScheme =
+                new wxChoice( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, arrayStringChoices, 0 );
+        selection = m_choiceColorScheme->FindString(currentColorScheme, true);
+        m_choiceColorScheme->SetSelection( selection );
+        retBoxSizer->Add( m_choiceColorScheme, 1, wxALL | wxALIGN_CENTER_VERTICAL, 5 );
+
+        m_buttonCoppyColorScheme =
+                new wxButton( this, wxID_ANY, _( "Copy..." ), wxDefaultPosition, wxDefaultSize, 0 );
+        retBoxSizer->Add( m_buttonCoppyColorScheme, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5 );
+
+        m_buttonDeleteColorScheme =
+                new wxButton( this, wxID_ANY, _( "Delete" ), wxDefaultPosition, wxDefaultSize, 0 );
+        retBoxSizer->Add( m_buttonDeleteColorScheme, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5 );
+
+        m_choiceColorScheme->Connect( wxEVT_COMMAND_CHOICE_SELECTED,
+                wxCommandEventHandler( WIDGET_EESCHEMA_COLOR_CONFIG::OnChoice ), NULL, this );
+        m_buttonCoppyColorScheme->Connect( wxEVT_COMMAND_BUTTON_CLICKED,
+                wxCommandEventHandler( WIDGET_EESCHEMA_COLOR_CONFIG::OnButtonCopyClick ), NULL, this );
+        m_buttonDeleteColorScheme->Connect( wxEVT_COMMAND_BUTTON_CLICKED,
+                wxCommandEventHandler( WIDGET_EESCHEMA_COLOR_CONFIG::OnButtonDeleteClick ), NULL,
+                this );
+    }
+
+    return retBoxSizer;
+}
+
+
+void WIDGET_EESCHEMA_COLOR_CONFIG::OnChoice( wxCommandEvent& event )
+{
+    wxChoice* choiceList = static_cast<wxChoice*>( event.GetEventObject() );
+    wxString  scheme =
+            choiceList->GetString( static_cast<unsigned int>( choiceList->GetCurrentSelection() ) );
+
+    SetCurrentColorSchemeInTempFile( scheme );
+    GetColorsFromTempFile( scheme );
+}
+
+
+void WIDGET_EESCHEMA_COLOR_CONFIG::OnButtonCopyClick( wxCommandEvent& event )
+{
+    wxString msg = _( "Please enter a new name for the copied color scheme" );
+    wxString textFromUser = wxEmptyString;
+    wxString proposedName = wxEmptyString;
+    int      index;
+    bool     repeat = true;
+
+    index = m_choiceColorScheme->GetSelection();
+
+    if( index >= 0 )
+    {
+        proposedName = m_choiceColorScheme->GetString( static_cast<unsigned int>( index ) )
+                       + wxT( " (copy)" );
+    }
+
+    while( repeat )
+    {
+        repeat = false;
+
+        textFromUser = wxGetTextFromUser( msg, _( "Copy Color Scheme" ), proposedName, this );
+
+        if( textFromUser == wxEmptyString )
+        {
+            return;
+        }
+        else
+        {
+            for( unsigned int i = 0; i < m_choiceColorScheme->GetCount(); ++i )
+            {
+                if( m_choiceColorScheme->GetString( i ) == textFromUser )
+                {
+                    wxMessageBox( _( "The name you entered exists. Pleas enter another one." ) );
+                    repeat = true;
+                }
+            }
+        }
+    }
+
+    CopyColorSchemeInTempFile( textFromUser );
+    SetCurrentColorSchemeInTempFile( textFromUser );
+
+    m_choiceColorScheme->Insert( textFromUser, ( m_choiceColorScheme->GetCount() ) );
+    m_choiceColorScheme->SetSelection( static_cast<int>( m_choiceColorScheme->GetCount() - 1 ) );
+
+    Refresh( false );
+
+    event.Skip();
+}
+
+
+void WIDGET_EESCHEMA_COLOR_CONFIG::OnButtonDeleteClick( wxCommandEvent& event )
+{
+    int selection = m_choiceColorScheme->GetSelection();
+
+    if( selection < 0 )
+    {
+        wxMessageBox( _( "Please chose color scheme you want to delete" ) );
+    }
+    else
+    {
+        wxString deletedScheme =
+                m_choiceColorScheme->GetString( static_cast<unsigned int>( selection ) );
+        wxString msg = _( "Are you sure you want to delete this color scheme?" );
+
+        if( wxMessageBox( msg, _( "Delete Color Scheme" ), wxYES_NO | wxICON_QUESTION, this )
+                == wxYES )
+        {
+            m_choiceColorScheme->Delete( static_cast<unsigned int>( selection ) );
+            m_choiceColorScheme->SetSelection( 0 );
+
+            GetColorsFromTempFile( m_choiceColorScheme->GetString( 0 ) );
+
+            DeleteColorSchemeInTempFile( deletedScheme );
+
+            Refresh( false );
+        }
+    }
+
+    event.Skip();
+}
+
+
+bool WIDGET_EESCHEMA_COLOR_CONFIG::InitColorSchemeFile( void )
+{
+    wxFileName fileName;
+
+    fileName.AssignDir( GetKicadConfigPath() );
+    fileName.SetFullName( COLOR_SCHEME_FILE_NAME );
+
+    wxString filePath = fileName.GetFullPath();
+
+    if( wxFileExists( filePath ) == false )
+    {
+        if( CreateColorSchemeFile( fileName.GetFullPath() ) == false )
+        {
+            return false;
+        }
+    }
+
+    //Create temporary color scheme config file
+    fileName.SetFullName( COLOR_SCHEME_TEMP_FILE_NAME );
+    wxString tempFilePath = fileName.GetFullPath();
+
+    if (wxCopyFile( filePath, tempFilePath ) == false)
+    {
+        return false;
+    }
+
+    m_colorSchemeConfigFile = std::make_unique<wxFileConfig>( wxEmptyString, wxEmptyString,
+            tempFilePath, wxEmptyString, wxCONFIG_USE_LOCAL_FILE | wxCONFIG_USE_RELATIVE_PATH );
+
+    return true;
+}
+
+
+bool WIDGET_EESCHEMA_COLOR_CONFIG::GetColorsFromTempFile( const wxString& aScheme )
+{
+    int           buttonId = 1800;
+    BUTTONINDEX*  groups = buttonGroups;
+    wxString      configGroup = '/' + aScheme;
+
+
+    if( m_colorSchemeConfigFile->HasGroup( configGroup ) == false )
+    {
+        return false;
+    }
+
+    m_colorSchemeConfigFile->Write( wxT( "current" ), aScheme );
+    m_colorSchemeConfigFile->SetPath( configGroup );
+
+    while( groups->m_Buttons != NULL )
+    {
+        COLORBUTTON* buttons = groups->m_Buttons;
+
+        while( buttons->m_Layer >= 0 )
+        {
+            COLOR4D  newColor;
+            wxString colorStr = wxEmptyString;
+
+            if( m_colorSchemeConfigFile->Read( buttons->m_ConfigName, &colorStr ) )
+            {
+                newColor.SetFromWxString( colorStr );
+            }
+
+            //            COLOR4D color = GetLayerColor( SCH_LAYER_ID( buttons->m_Layer ) );
+
+            if( currentColors[buttons->m_Layer] != newColor )
+            {
+                wxBitmapButton* bitmapButton =
+                        static_cast<wxBitmapButton*>( FindWindowById( buttonId ) );
+
+                wxMemoryDC iconDC;
+                wxBitmap   bitmap = bitmapButton->GetBitmapLabel();
+
+                iconDC.SelectObject( bitmap );
+                iconDC.SetPen( *wxBLACK_PEN );
+
+                wxBrush brush;
+
+                brush.SetColour( newColor.ToColour() );
+                brush.SetStyle( wxBRUSHSTYLE_SOLID );
+                iconDC.SetBrush( brush );
+                iconDC.DrawRectangle( 0, 0, m_butt_size_pix.x, m_butt_size_pix.y );
+
+                bitmapButton->SetBitmapLabel( bitmap );
+                bitmapButton->Refresh();
+
+                currentColors[buttons->m_Layer] = newColor;
+            }
+
+            buttonId++;
+            buttons++;
+        }
+
+        groups++;
+    }
+
+    Refresh( false );
+
+    return true;
+}
+
+
+wxString WIDGET_EESCHEMA_COLOR_CONFIG::GetCurrentColorSchemeFromFile( void )
+{
+    wxString retScheme = wxEmptyString;
+
+    m_colorSchemeConfigFile->SetPath( '/' );
+    m_colorSchemeConfigFile->Read( wxT( "current" ), &retScheme );
+
+    return retScheme;
+}
+
+
+bool WIDGET_EESCHEMA_COLOR_CONFIG::SetCurrentColorSchemeInTempFile( const wxString& aScheme )
+{
+    m_colorSchemeConfigFile->SetPath( '/' );
+
+    return m_colorSchemeConfigFile->Write( wxT( "current" ), aScheme );
+}
+
+
+bool WIDGET_EESCHEMA_COLOR_CONFIG::ChangeColorShemaInTempFile(
+        const wxString& aKey, const wxString& aValue )
+{
+    int           index;
+    wxString      selection;
+
+    index = m_choiceColorScheme->GetSelection();
+
+    if( index < 0 )
+    {
+        return false;
+    }
+
+    selection = m_choiceColorScheme->GetString( static_cast<unsigned int>( index ) );
+    m_colorSchemeConfigFile->SetPath( '/' + selection );
+
+    return m_colorSchemeConfigFile->Write( aKey, aValue );
+}
+
+
+bool WIDGET_EESCHEMA_COLOR_CONFIG::CopyColorSchemeInTempFile( const wxString& aNewScheme )
+{
+    m_colorSchemeConfigFile->SetPath( '/' + aNewScheme );
+
+    BUTTONINDEX* groups = buttonGroups;
+
+    while( groups->m_Buttons != NULL )
+    {
+        COLORBUTTON* buttons = groups->m_Buttons;
+
+        while( buttons->m_Layer >= 0 )
+        {
+            wxString rgbString =
+                    currentColors[buttons->m_Layer].ToWxString( wxC2S_NAME | wxC2S_CSS_SYNTAX );
+
+            m_colorSchemeConfigFile->Write( buttons->m_ConfigName, rgbString );
+
+            buttons++;
+        }
+
+        groups++;
+    }
+
+    return true; //TODO void??
+}
+
+
+bool WIDGET_EESCHEMA_COLOR_CONFIG::DeleteColorSchemeInTempFile( const wxString& aDeletedScheme )
+{
+    wxString      group = wxEmptyString;
+
+    group = '/' + aDeletedScheme;
+
+    if( m_colorSchemeConfigFile->HasGroup( group ) == false )
+    {
+        return false;
+    }
+
+    m_colorSchemeConfigFile->DeleteGroup( group );
+
+    return true;
+}
+
+
+bool WIDGET_EESCHEMA_COLOR_CONFIG::CreateColorSchemeFile(const wxString& aFilePath)
+{
+    std::unique_ptr<wxFileConfig> configFile =
+            std::make_unique<wxFileConfig>( wxEmptyString, wxEmptyString, aFilePath, wxEmptyString,
+                    wxCONFIG_USE_LOCAL_FILE | wxCONFIG_USE_RELATIVE_PATH );
+
+    BUTTONINDEX* groups = buttonGroups;
+    configFile->Write( wxT( "current" ), wxT( "Default" ) );
+    configFile->SetPath( wxT( "/Default" ) );
+
+    while( groups->m_Buttons != NULL )
+    {
+        COLORBUTTON* buttons = groups->m_Buttons;
+
+        while( buttons->m_Layer >= 0 )
+        {
+            wxString rgbString = GetLayerColor( SCH_LAYER_ID( buttons->m_Layer ) )
+                                         .ToWxString( wxC2S_NAME | wxC2S_CSS_SYNTAX );
+
+            configFile->Write( buttons->m_ConfigName, rgbString );
+
+            buttons++;
+        }
+
+        groups++;
+    }
+
+    return true; //TODO void??
+}
+
+
+bool WIDGET_EESCHEMA_COLOR_CONFIG::GetColorSchemeListFromFile( wxArrayString& aColorSchemeList )
+{
+    wxString      group;
+    long          index = 0;
+
+    if( m_colorSchemeConfigFile->GetFirstGroup( group, index ) )
+    {
+        aColorSchemeList.Add( group );
+
+        while( m_colorSchemeConfigFile->GetNextGroup( group, index ) )
+        {
+            aColorSchemeList.Add( group );
+        }
+    }
+    else
+    {
+        return false;
+    }
+
+    return true;
+}
+
+
+bool WIDGET_EESCHEMA_COLOR_CONFIG::SaveColorSchemeChangesToFile()
+{
+    bool        retVal = false;
+    wxString    configPath = wxEmptyString;
+    wxFileName  fileName;
+
+    fileName.AssignDir( GetKicadConfigPath() );
+    fileName.SetFullName( COLOR_SCHEME_FILE_NAME );
+
+    wxString filePath = fileName.GetFullPath();
+
+    fileName.SetFullName( COLOR_SCHEME_TEMP_FILE_NAME );
+    wxString tempFilePath = fileName.GetFullPath();
+
+
+    retVal = wxCopyFile(tempFilePath, filePath);
+    //wxRemoveFile(m_colorSchemeTempFile);
+
+    return retVal;
 }
 
 

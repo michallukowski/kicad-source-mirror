@@ -30,6 +30,11 @@
 #include <wx/colordlg.h>
 #include <wx/clrpicker.h>
 
+#include <wx/choice.h>
+#include <wx/stattext.h>
+#include <wx/fileconf.h>
+#include <memory>
+
 class wxBoxSizer;
 class wxStaticLine;
 class wxStdDialogButtonSizer;
@@ -44,13 +49,38 @@ class WIDGET_EESCHEMA_COLOR_CONFIG : public wxPanel
 private:
     EDA_DRAW_FRAME*         m_drawFrame;
     wxBoxSizer*             m_mainBoxSizer;
+    wxBoxSizer*             m_colorSchemeBoxSizer;
+    wxBoxSizer*             m_controlsBoxSizer;
     wxSize                  m_butt_size_pix;
     wxSize                  m_butt_border_pix;
 
+    wxStaticText*           m_labelColorScheme;
+    wxChoice*               m_choiceColorScheme;
+    wxButton*               m_buttonCoppyColorScheme;
+    wxButton*               m_buttonDeleteColorScheme;
+    std::unique_ptr<wxFileConfig>   m_colorSchemeConfigFile;
+
+    // Creates color scheme check list and sizers
+    wxBoxSizer* CreateColorSchemeList();
     // Creates the controls and sizers
-    void CreateControls();
+    wxBoxSizer* CreateControls();
 
     void    SetColor( wxCommandEvent& aEvent );
+
+    void     OnChoice( wxCommandEvent& aEvent );
+    void     OnButtonCopyClick( wxCommandEvent& aEvent );
+    void     OnButtonDeleteClick( wxCommandEvent& aEvent );
+    bool     InitColorSchemeFile( void );
+    bool     GetColorsFromTempFile( const wxString& aScheme );
+    wxString GetCurrentColorSchemeFromFile( void );
+    bool     SetCurrentColorSchemeInTempFile( const wxString& aScheme );
+    bool     ChangeColorShemaInTempFile( const wxString& aKey, const wxString& aValue );
+    bool     CopyColorSchemeInTempFile( const wxString& aNewScheme );
+    bool     DeleteColorSchemeInTempFile( const wxString& aDeletedScheme );
+    bool     CreateColorSchemeFile( const wxString& aFilePath );
+//    bool     CreateColorSchemeTempFile( void );
+    bool     GetColorSchemeListFromFile( wxArrayString& aColorSchemeList );
+    bool     SaveColorSchemeChangesToFile( void );
 
     virtual EDA_DRAW_FRAME* GetDrawFrame() { return m_drawFrame; }
 
