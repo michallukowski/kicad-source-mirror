@@ -473,6 +473,7 @@ bool WIDGET_EESCHEMA_COLOR_CONFIG::GetColorsFromTempFile( const wxString& aSchem
         return false;
     }
 
+    m_colorSchemeConfigFile->SetPath( '/' );
     m_colorSchemeConfigFile->Write( wxT( "current" ), aScheme );
     m_colorSchemeConfigFile->SetPath( configGroup );
 
